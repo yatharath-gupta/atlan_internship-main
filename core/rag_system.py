@@ -7,15 +7,15 @@ from typing import List, Dict, Callable, Optional, Generator
 
 # Third-party imports
 import google.generativeai as genai
-# try:
-#     __import__('pysqlite3')
-#     import sys
-#     sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
-#     import chromadb
-#     CHROMADB_AVAILABLE = True
-# except (ImportError, RuntimeError):
-#     chromadb = None
-#     CHROMADB_AVAILABLE = True
+try:
+    __import__('pysqlite3')
+    import sys
+    sys.modules['sqlite3'] = sys.modules.pop('pysqlite3')
+    import chromadb
+    CHROMADB_AVAILABLE = True
+except (ImportError, RuntimeError):
+    chromadb = None
+    CHROMADB_AVAILABLE = True
 # Local application imports
 from .state import TicketState, RAGResponse, TicketClassification
 from .agents import (
@@ -29,8 +29,8 @@ from prompts import get_classification_prompt
 
 # Set up logging
 logger = logging.getLogger(__name__)
-import chromadb
-CHROMADB_AVAILABLE = True
+# import chromadb
+# CHROMADB_AVAILABLE = True
 class AtlanRAGSystem:
     def __init__(self, 
                  gemini_api_keys: List[str],
