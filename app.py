@@ -39,7 +39,7 @@ st.markdown("""
 @st.cache_resource
 def initialize_rag_system():
     try:
-        GEMINI_API_KEYS = [
+        CHABI = [
                 "AIzaSyAFHriOAJQFwaVcSgAXpdyUW_DvIPdWQd4",
                 "AIzaSyA2eGfn-HYFgVVU3146LQMqD_QVIf_7snY",
                 "AIzaSyBJKMg2uEbsT0E9f37KAJ7rHrXyHIaYlt4", 
@@ -58,7 +58,7 @@ def initialize_rag_system():
             }
         
         return AtlanRAGSystem(
-            gemini_api_keys=GEMINI_API_KEYS,
+            gemini_api_keys=CHABI,
             chromadb_config=CHROMADB_CONFIG
         )
     except Exception as e:
