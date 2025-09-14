@@ -39,23 +39,11 @@ st.markdown("""
 @st.cache_resource
 def initialize_rag_system():
     try:
-        CHABI = [
-                "AIzaSyAFHriOAJQFwaVcSgAXpdyUW_DvIPdWQd4",
-                "AIzaSyA2eGfn-HYFgVVU3146LQMqD_QVIf_7snY",
-                "AIzaSyBJKMg2uEbsT0E9f37KAJ7rHrXyHIaYlt4", 
-                "AIzaSyBCN3LRmoajoEbmd9rxBO7cfDugoWqQG40",
-                "AIzaSyAwjBzdYJVQUehCCLigvjNKOEb3Szo6HkY",
-                "AIzaSyCWvK_GYiy2ZpITZxpWb7453zFzoN_VqmM",
-                 "AIzaSyAWEZuMIu7Yn1ISlXG9SKDVEaE96ACSjHo"
-            ]
+        CHABI = st.secrets["GEMINI_API_KEYS"]
         
         CHROMADB_CONFIG = None
-        if CHROMADB_AVAILABLE:
-            CHROMADB_CONFIG = {
-                'api_key': 'ck-GgDLCLEeXKAEhpWCWMDwcFP1hEVH4gpqhii25vw98XSC',
-                'tenant': '94df3293-175e-443f-994a-22655697ffc9',
-                'database': 'atlan'
-            }
+        if "CHROMADB_CONFIG" in st.secrets:
+            CHROMADB_CONFIG = dict(st.secrets["CHROMADB_CONFIG"])
         
         return AtlanRAGSystem(
             gemini_api_keys=CHABI,
