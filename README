@@ -1,0 +1,115 @@
+Atlan AI Customer Support Copilot
+
+This project is my implementation of the Customer Support Copilot challenge. The goal was to build an AI pipeline that can ingest, triage, research, and respond to customer support tickets, presented through a Streamlit helpdesk application.
+
+The core of this project isn't just a simple chatbot; it's a multi-agent system designed to mimic the workflow of a junior support agent, from initial ticket classification to generating a well-researched, source-grounded response.
+
+https://atlaninternship.streamlit.app/
+
+System Architecture
+
+I designed the system around an orchestrator that directs a ticket through a series of specialized agents. This modular approach allows for a clear separation of concerns and makes the pipeline easier to debug and extend.
+
+
+Core Features
+
+Bulk Ticket Dashboard: On load, the app processes a sample set of tickets, displaying a detailed classification for each, including its topic, sentiment, and assigned priority.
+
+Interactive AI Agent: A real-time interface where a user can submit a ticket. The UI displays both the internal analysis (the agent's "thinking process") and the final, customer-facing response.
+
+Conversational AI Agent: A chat-based interface that maintains conversation history and provides the same deep analysis for each user message.
+
+RAG Pipeline: For relevant topics, the system uses a Retrieval-Augmented Generation pipeline to answer questions based on a knowledge base built from the Atlan Docs and Developer Hub. All answers are grounded in the retrieved sources, which are cited in the response.
+
+Tech Stack
+
+AI/ML: Google Gemini (for generation and embeddings), chromadb (for vector storage and retrieval).
+
+Application Framework: Streamlit.
+
+Data Processing: requests, beautifulsoup4 for scraping.
+
+Core Language: Python 3.
+
+Design Decisions & Trade-offs
+
+Building a system like this involves a series of choices. Here’s a breakdown of my thought process for the most critical components.
+
+1. The Multi-Agent Workflow
+
+A simple Classify-then-RAG pipeline felt too naive for real-world support tickets. Customer queries are often complex and multi-faceted. My solution was to build a more robust, agentic workflow.
+
+Why? It mimics a human's problem-solving process. First, understand the high-level problem (Triage). If it's complex, break it into smaller, manageable parts (Decomposition). Research each part (Retrieval), combine the findings into a coherent answer (Synthesis), and finally, double-check your work (Review).
+
+The Decomposition Agent is key. It turns a vague query like "How do I set up Okta SSO and create a custom role?" into two distinct, answerable questions. This drastically improves the relevance of the documents retrieved by the Retrieval Agent.
+
+The Reviewer Agent is my safeguard. LLMs can hallucinate. This agent acts as an automated QA step, checking the draft response against the retrieved context to ensure factual grounding. It's a critical guardrail for building a trustworthy AI.
+
+2. The Data Pipeline & Knowledge Base
+
+The quality of any RAG system is limited by the quality of its knowledge base. I implemented a two-stage data pipeline.
+
+Scraping (new_data.py): I wrote a scraper with an "intelligent content extractor" that focuses on parsing the main content of a page (<main>, <article>) and strips out irrelevant noise like navbars, footers, and sidebars. This results in cleaner data for embedding.
+
+Enrichment (enrich_chroma.py): Before embedding, I added a crucial optimization. This script analyzes the URL of each document and adds a domain metadata tag (e.g., API/SDK, SSO, Product). During retrieval, the Retrieval Agent performs a filtered search on this domain. This is far more efficient and relevant than a brute-force vector search across the entire knowledge base.
+
+3. Acknowledging the Rate-Limiting Issue
+
+The agentic design is powerful but API-intensive. For a single query, it can make up to 4-5 generative model calls in a quick burst. On the Gemini API's free tier, this will inevitably hit the requests-per-minute quota.
+
+Root Cause: The orchestrate_response function calls each agent sequentially and immediately.
+
+Production Solution: This is a known engineering problem. The correct solution, which I've implemented in the populate_chroma.py script with the RateLimitedEmbeddingGenerator, is to wrap API calls in a decorator that implements exponential backoff with jitter. If a 429 error is received, the system waits for a calculated period before retrying. This would smooth out the burst of requests and allow the pipeline to complete successfully, albeit slightly slower. For the scope of this assignment, I focused on building the core logic first.
+
+How to Run Locally
+Prerequisites
+
+-Python 3.10+
+
+-git
+
+1. Clone the Repository
+
+git clone https://github.com/yatharath-gupta/atlan_internship-main
+cd atlan_internship-main```
+
+### 2. Install Dependencies
+
+
+pip install -r requirements.txt
+
+3. Configure API Keys
+
+You need to provide your Gemini API keys and ChromaDB credentials. Create a secrets file:
+
+
+mkdir .streamlit
+touch .streamlit/secrets.toml
+
+Add your credentials to the secrets.toml file in the following format:
+
+
+# .streamlit/secrets.toml
+
+GEMINI_API_KEYS = "YOUR_GEMINI_API_KEY"
+
+[CHROMADB_CONFIG]
+api_key = "YOUR_CHROMADB_API_KEY"
+tenant = "YOUR_CHROMADB_TENANT_ID"
+database = "atlan"
+
+Note: The app is configured to handle multiple Gemini keys in a list, but a single key will work.
+
+4. Run the Application
+
+streamlit run app.py
+
+The application should now be running and accessible in your web browser.
+
+Potential Future Improvements
+
+Implement Exponential Backoff: Add a robust backoff strategy to the real-time agent workflow to gracefully handle API rate limits.
+
+Caching Layer: Introduce a caching mechanism (e.g., st.cache_data) to store responses for identical queries, reducing latency and API costs.
+
+Stateful Conversational Memory: Enhance the conversational agent to use the history of the conversation as context for generating new responses, allowing for more natural follow-up questions.
